@@ -110,7 +110,7 @@ func NewClient(serverID int) (*Client, error) {
 func (client *Client) NetworkMetrics() (Results, error) {
 	result := Results{}
 
-	cmdArr := []string{"-f", "json"}
+	cmdArr := []string{"--accept-license", "-f", "json"}
 
 	if client.ServerID > 0 {
 		cmdArr = append(cmdArr, "-s", fmt.Sprintf("%d", client.ServerID))
