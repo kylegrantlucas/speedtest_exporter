@@ -2,10 +2,10 @@ package exporter
 
 import (
 	"fmt"
+	"log"
 
-	"github.com/kylegrantlucas/speedtest_exporter/speedtest"
+	"github.com/kylegrantlucas/speedtest-exporter/speedtest"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 )
 
 // Exporter collects speedtest stats and exports
@@ -37,13 +37,13 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 // to satisfy prometheus.Collector
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	if e.Client == nil {
-		log.Errorf("speedtest client not configured")
+		log.Printf("speedtest client not configured")
 		return
 	}
 
 	metrics, err := e.Client.NetworkMetrics()
 	if err != nil {
-		log.Errorf("can't run export: %s", err)
+		log.Printf("can't run export: %s", err)
 		return
 	}
 
