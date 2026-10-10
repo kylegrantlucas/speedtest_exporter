@@ -1,6 +1,3 @@
-# Go
-speedtest_exporter
-
-# Files
-.DS_Store
-.vscode
+.direnv/
+/result
+/speedtest_exporter
