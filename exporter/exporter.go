@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kylegrantlucas/speedtest-exporter/speedtest"
+	"github.com/kylegrantlucas/speedtest_exporter/speedtest"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

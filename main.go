@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kylegrantlucas/speedtest-exporter/exporter"
+	"github.com/kylegrantlucas/speedtest_exporter/exporter"
 	"github.com/prometheus/client_golang/prometheus"
 	prom_version "github.com/prometheus/client_golang/prometheus/collectors/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
