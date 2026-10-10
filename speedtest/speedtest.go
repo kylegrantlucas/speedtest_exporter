@@ -2,9 +2,12 @@ package speedtest
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"strconv"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -46,59 +49,69 @@ var metricDescriptions = map[string]*prometheus.Desc{
 	),
 	"upload_bytes": prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "upload_bytes"),
-		"Download Bytes",
+		"Upload Bytes",
 		nil, nil,
 	),
 	"upload_elapsed": prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "upload_elapsed"),
-		"Download Elapsed (ms)",
+		"Upload Elapsed (ms)",
 		nil, nil,
 	),
 }
 
+// Client runs the Ookla speedtest CLI.
 type Client struct {
+	// Binary is the speedtest CLI to execute (default "speedtest").
+	Binary   string
 	ServerID int
+	Timeout  time.Duration
 }
 
-// NewClient defines a new client for Speedtest
+// NewClient defines a new client for Speedtest.
 func NewClient(serverID int) (*Client, error) {
-	return &Client{ServerID: serverID}, nil
+	return &Client{Binary: "speedtest", ServerID: serverID, Timeout: 2 * time.Minute}, nil
 }
 
-func (client *Client) NetworkMetrics() (Result, error) {
-	result := Result{}
-
-	cmdArr := []string{"--accept-license", "-f", "json"}
-
+// Args returns the CLI arguments for a run.
+func (client *Client) Args() []string {
+	args := []string{"--accept-license", "--accept-gdpr", "--format=json", "--progress=no"}
 	if client.ServerID > 0 {
-		cmdArr = append(cmdArr, "-s", fmt.Sprintf("%d", client.ServerID))
+		args = append(args, "--server-id="+strconv.Itoa(client.ServerID))
+	}
+	return args
+}
+
+// NetworkMetrics runs a speedtest and parses its JSON result.
+func (client *Client) NetworkMetrics(ctx context.Context) (Result, error) {
+	if client.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, client.Timeout)
+		defer cancel()
 	}
 
-	cmd := exec.Command("speedtest", cmdArr...)
-	var outBuf bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &outBuf
+	var stdout, stderr bytes.Buffer
+	cmd := exec.CommandContext(ctx, client.Binary, client.Args()...)
+	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	err := cmd.Run()
-	if err != nil {
-		return result, fmt.Errorf(fmt.Sprint(err) + ": " + stderr.String())
+	if err := cmd.Run(); err != nil {
+		return Result{}, fmt.Errorf("running %s: %w: %s", client.Binary, err, stderr.String())
 	}
 
-	out := outBuf.String()
-	if err != nil {
-		return result, fmt.Errorf("reading speedtest output: %s", err)
-	}
+	return ParseResult(stdout.Bytes())
+}
 
-	err = json.Unmarshal([]byte(out), &result)
-	if err != nil {
-		return result, fmt.Errorf("unmarshaling speedtest output: %s", err)
+// ParseResult decodes the JSON emitted by `speedtest --format=json`.
+func ParseResult(data []byte) (Result, error) {
+	var result Result
+	if err := json.Unmarshal(data, &result); err != nil {
+		return result, fmt.Errorf("unmarshaling speedtest output: %w", err)
 	}
-
 	return result, nil
 }
 
+// PromMetrics returns every metric description.
 func PromMetrics() []*prometheus.Desc {
-	descs := []*prometheus.Desc{}
+	descs := make([]*prometheus.Desc, 0, len(metricDescriptions))
 	for _, v := range metricDescriptions {
 		descs = append(descs, v)
 	}

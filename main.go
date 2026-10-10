@@ -26,9 +26,6 @@ func main() {
 	)
 	flag.Parse()
 
-	// log.Printf("starting speedtest exporter: %v", prom_version.Info())
-	// log.Printf("build context: %v", prom_version.BuildContext())
-
 	exporter, err := exporter.NewExporter(*serverID)
 	if err != nil {
 		log.Printf("creating exporter: %s", err)

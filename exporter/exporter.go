@@ -1,6 +1,7 @@
 package exporter
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -41,7 +42,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	metrics, err := e.Client.NetworkMetrics()
+	metrics, err := e.Client.NetworkMetrics(context.Background())
 	if err != nil {
 		log.Printf("can't run export: %s", err)
 		return

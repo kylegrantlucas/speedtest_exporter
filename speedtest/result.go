@@ -49,10 +49,10 @@ type Result struct {
 
 func (result Result) ToMetricsMap() map[string]interface{} {
 	return map[string]interface{}{
-		"download_bandwidth": result.Download.Bandwidth / 100000,
+		"download_bandwidth": bytesPerSecToMbps(result.Download.Bandwidth),
 		"download_bytes":     result.Download.Bytes,
 		"download_elapsed":   result.Download.Elapsed,
-		"upload_bandwidth":   result.Upload.Bandwidth / 100000,
+		"upload_bandwidth":   bytesPerSecToMbps(result.Upload.Bandwidth),
 		"upload_bytes":       result.Upload.Bytes,
 		"upload_elapsed":     result.Upload.Elapsed,
 		"ping_latency":       result.Ping.Latency,
@@ -88,4 +88,9 @@ func (result Result) ToPrometheusMetrics() []prometheus.Metric {
 	}
 
 	return metrics
+}
+
+// bytesPerSecToMbps converts Ookla's bandwidth (bytes/s) to megabits/s.
+func bytesPerSecToMbps(b float64) float64 {
+	return b * 8 / 1e6
 }
